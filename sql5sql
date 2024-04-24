@@ -1,0 +1,177 @@
+--DDL: create
+create table cafe_menu(
+-- 컬럼명 자료형 [제약조건]
+    id  number,
+    name varchar(100),
+    price number
+);
+
+--number의 최댓값, 자바의 long...
+drop table cafe_menu;
+
+--DML, insert
+insert into cafe_menu(id,name,price) values(1001,'Americano',2000);
+insert into cafe_menu(id,name) values(1002,'Cafe Latte');
+insert into cafe_menu(id) values(1003);
+insert into cafe_menu values(1004,'Orange Juice',5000);
+
+--DML, update 수정
+--where절을 쓰지않으면 price전부가 바뀌어 버린다.
+update cafe_menu
+   set price=3500
+ where id=1002;
+ 
+ update cafe_menu
+   set name='Cafe Mocha', price=4000
+ where id=1003;
+ 
+ insert into cafe_menu values(1005,'Mango Juice',5500);
+ 
+ update cafe_menu
+ set price=6000
+ where id=1005;
+ 
+--삭제 DML, delete
+--한개 행을 모두 지운다는 개념이어서 컬럼명을 지정하지 않는다.
+delete from cafe_menu where id=1004;
+insert into cafe_menu values(1001,'Americano',2000);
+delete from cafe_menu where id=1001;
+
+--제약 조건
+create table cafe_menu(
+-- 컬럼명 자료형 [제약조건]
+    id  number primary key,
+    name varchar(100) not null,
+    price number not null,
+    isice char(1) check(isice in ('Y','N'))
+);
+
+insert into cafe_menu values (1001, 'Americano', 200);
+insert into cafe_menu values (1002, 'Americano', 200);
+drop table cafe_menu;
+select * from cafe_menu;
+
+insert into cafe_menu values (cafe_menu_seq.nextval, 'Americano', 2000, 'Y');
+insert into cafe_menu values (cafe_menu_seq.nextval, 'Cafe Latte', 2000, 'Y');
+
+
+
+--Sequence 객체: 특정 조건을 갖춘 값을 기억하고 있는 객체
+create sequence cafe_menu_seq
+start with 1001 
+increment by 1
+nomaxvalue
+nocache;
+
+--외래키 
+--테이블 이름: product
+-- id 컬럼 1001부터 무한대까지 1씩 증가하는 시퀀스 사용-primary key
+-- name컬럼: 문자열 200바이트 할당하고 null은 허용하지 않음
+--price, 숫자이고 null 허용하지 않음
+--used컬럼 문자 1바이트 Y,N
+
+drop table product;
+create table product(
+    id number primary key,
+    name varchar(200) not null,
+    price number not null,
+    used char(1) check(used in ('Y','N'))
+);
+
+insert into product values (product_seq.nextval, 'LG Gram 17',1800000, 'N');
+insert into product values (product_seq.nextval, 'GalaxyBook',1500000, 'Y');
+insert into product values (product_seq.nextval, 'AirPot2',300000, 'N');
+
+select * from product;
+
+create sequence product_seq
+start with 1001 
+increment by 1
+nomaxvalue
+nocache;
+
+--테이블 이름: sell_history
+--id: 1번부터 무한대까지 1씩 증가하는 시퀀스 사용-primary key
+--product_id: 판매한 product의 id
+--sell_date: timestamp 형, not null
+--시퀀스 : sell_history_seq
+
+create table sell_history(
+    id number primary key,
+    product_id references product(id) on delete set null,
+    sell_date timestamp not null
+);
+
+drop table sell_history;
+drop sequence sell_history_seq;
+
+create sequence sell_history_seq
+start with 1
+increment by 1
+nomaxvalue
+nocache;
+
+drop sequence sell_histroty_seq;
+
+insert into sell_history values(sell_history_seq.nextval, 1003, sysdate);
+
+select * from product;
+select * from sell_history;
+
+delete from product where id=1002;
+
+------------------------------------------------
+drop table cafe_menu;
+select * from cafe_menu;
+--DDL alter (객체)의 설정을 변겨하는 쿼리
+
+alter table cafe_menu drop column iced;
+
+--필수(NOT NULL) 열을 추가하려면 테이블이 비어 있어야 합니다.
+alter table cafe_menu add (iced char(1) check(iced in('Y','N')) not null);
+
+alter table cafe_menu modify(iced varchar(3));
+
+--dictionary 시스템 테이블
+select * from user_constraints where table_name='CAFE_MENU';
+select * from user_tables;
+
+alter table cafe_menu drop constraint SYS_C007085;
+
+--테이블 내 제약조건 추가
+alter table cafe_menu add constraint iced_check check(iced in ('yes','no'));
+alter table cafe_menu drop constraint SYS_C007081;
+alter table cafe_menu modify(price number not null);
+
+--제약조건 삭제하고 추가할 때
+--alter table cafe_menu add constraint cafe_menu_pk primary key(id);
+----------------------------------------------------------
+select * from user_constraints where table_name='SELL_HISTORY';
+
+alter table cafe_menu rename column iced to isice;
+alter table cafe_menu rename to cafe;
+
+select * from cafe;
+alter table cafe drop constraint SYS_C007086;
+select * from user_constraints where table_name='CAFE';
+
+----------------------------------------------------------
+select * from product;
+select * from cafe;
+--insert, update, delect만 직접 commit해줘야 한다.
+
+--뷰. 하나이상의 테이블에서 원하는 데이터를 선택해 새로운 가상 테이블로 만든 객체
+select * from employee;
+--인하우스 개발 오더
+--직원들 전용 그룹웨어
+--부분적으로 데이터를 보고 싶을 때
+--select권한을 주면 모두를 볼 수 있는 문제가 있다.+컬럼단위의 권한 부여는 할 수 없다.
+
+--방법 1. 원래 테이블을 복사해서 새로운 테이블을 생성하는 방법
+create table employee_dev
+as
+select emp_id, emp_name, email, phone from employee;
+
+select * from employee_dev;
+
+
